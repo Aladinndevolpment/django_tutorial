@@ -20,3 +20,7 @@ from django.urls import path
 urlpatterns = [
     path('admin/', admin.site.urls),
 ]
+
+
+# TODO: Create store app and add following models: Category, Product, Order, OrderItem.
+# TODO: Create Admin for Category & Product.
