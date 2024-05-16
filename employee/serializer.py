@@ -26,3 +26,9 @@ class EmployeeSerializer(serializers.ModelSerializer):
         model = Employee
         fields = ['full_name', 'email', 'addresses',
                   'designation']
+
+
+class AllEmployeeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Employee
+        fields = ['first_name', 'last_name', 'email', 'designation']
