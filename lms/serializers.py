@@ -19,6 +19,11 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
         model = Employee
         exclude = ['is_active']
 
+    def create(self, validated_data):
+        hash = make_password(validated_data['password'])
+        validated_data['password'] = hash
+        return super().create(validated_data)
+
 # TODO: Add employee to POST.
 
 
