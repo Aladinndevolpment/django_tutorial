@@ -2,7 +2,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from datetime import datetime, timedelta
 from django.contrib.auth.hashers import check_password
-from jwt import encode
+from jwt import encode, decode
 from django.conf import settings
 
 
@@ -28,4 +28,30 @@ def authenticateUser(model, request):
     encoded_jwt = encode(
         payload, "secret", algorithm="HS256")
 
-    return encoded_jwt
+    return Response({"token": encoded_jwt, "message": "Authentication successful."}, status=status.HTTP_200_OK)
+
+
+def authenticatedUser(model, serializer, request):
+    if 'Authorization' not in request.headers:
+        return Response({"error": "Authorization header is required."},
+                        status=status.HTTP_403_FORBIDDEN)
+    authorization: str = request.headers['Authorization']
+
+    if 'Bearer' not in authorization:
+        return Response({"error": "Token is malformed."},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    authorization = authorization.split(' ')[1].strip()
+
+    user = decode(authorization, 'secret', algorithms=["HS256"])
+    current_time = datetime.now()
+    token_exp = datetime.strptime(user['token_expiry'], "%Y-%m-%d %H:%M:%S.%f")
+
+    if token_exp < current_time:
+        return Response({"error": "Token is expired."},
+                        status=status.HTTP_403_FORBIDDEN)
+
+    eid = user['id']
+    employee = model.objects.filter(id=eid).first()
+
+    return Response({"employee": serializer(employee).data, "message": "Authentication successful."}, status=status.HTTP_200_OK)

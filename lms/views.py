@@ -1,16 +1,15 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.contrib.auth.hashers import check_password, make_password
-from jwt import decode
+from rest_framework.filters import OrderingFilter, SearchFilter
+from django_filters.rest_framework.backends import DjangoFilterBackend
 from rest_framework.pagination import PageNumberPagination
 
-from base.authenticator import authenticateUser
+from base.authenticator import authenticateUser, authenticatedUser
+from lms.permissions import IsAuthenticatedEmployee
 
 
 from .models import Employee, Lead
-from .serializers import EmployeeCreateSerializer, EmployeeSerializer, EmployeeUpdateSerializer, LeadSerializer
+from .serializers import EmployeeCreateSerializer, EmployeeSerializer, EmployeeUpdateSerializer, LeadCreateSerializer, LeadSerializer
 
 # Create your views here.
 
@@ -33,40 +32,53 @@ class EmployeeViewSet(ModelViewSet):
         return super().get_serializer_class()
 
 
+# TODO: https://www.django-rest-framework.org/api-guide/filtering/ -- find out search filter and add filter classes
+
+
 class LeadViewSet(ModelViewSet):
     serializer_class = LeadSerializer
-    queryset = Lead.objects.filter(is_active=True)
     http_method_names = ['get', 'post']
+    permission_classes = [IsAuthenticatedEmployee]
+
+    pagination_class = DefaultPagination
+    filter_backends = [OrderingFilter, SearchFilter]
+    search_fields = ['name', 'employee__first_name', 'email']
+    # filter_classes
+
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return []
+        return super().get_permissions()
+
+    def get_serializer_class(self):
+        if (self.request.method == 'POST'):
+            return LeadCreateSerializer
+        return super().get_serializer_class()
+
+    def get_queryset(self):
+        user = self.request.user
+        return Lead.objects.filter(employee=user).filter(is_active=True)
 
 
 class GenerateToken(APIView):
     def post(self, request):
-        jwt = authenticateUser(Employee, request)
-        return Response({"token": jwt, "message": "Authentication successful."}, status=status.HTTP_200_OK)
+        response = authenticateUser(Employee, request)
+        return response
 
 
-# TODO: add token expiry validation
-# TODO: create a function out of it
-# TODO: create setting variable for setting
+# DONE: add token expiry validation
+# DONE: create a function out of it
+# DONE: create setting variable for setting
 
 class EmployeeAPIView(APIView):
     def get(self, request):
-        if 'Authorization' not in request.headers:
-            return Response({"error": "Authorization header is required."},
-                            status=status.HTTP_403_FORBIDDEN)
-        authorization: str = request.headers['Authorization']
+        return authenticatedUser(Employee, EmployeeSerializer, request)
 
-        if 'Bearer' not in authorization:
-            return Response({"error": "Token is malformed."},
-                            status=status.HTTP_400_BAD_REQUEST)
 
-        authorization = authorization.split(' ')[1].strip()
-
-        user = decode(authorization, 'secret', algorithms=["HS256"])
-        eid = user['id']
-        employee = Employee.objects.filter(id=eid).first()
-
-        return Response({"employee": employee.first_name, "message": "Authentication successful."}, status=status.HTTP_200_OK)
+# TODO: employee viewset
+class EmployeeViewSet(ModelViewSet):
+    serializer_class = EmployeeSerializer
+    queryset = Employee.objects.filter(is_active=True)
 
 
 {

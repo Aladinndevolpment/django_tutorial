@@ -8,6 +8,7 @@ django = "*"
 django-import-export = "*"
 djangorestframework = "*"
 pyjwt = "*"
+django-filter = "*"
 
 [dev-packages]
 

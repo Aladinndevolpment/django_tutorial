@@ -24,7 +24,7 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
         validated_data['password'] = hash
         return super().create(validated_data)
 
-# TODO: Add employee to POST.
+# DONE: Add employee to POST.
 
 
 class LeadSerializer(serializers.ModelSerializer):
@@ -32,6 +32,13 @@ class LeadSerializer(serializers.ModelSerializer):
 
     def get_employee_name(self, lead):
         return {"first_name": lead.employee.first_name, "id": lead.employee.id}
+
+    class Meta:
+        model = Lead
+        exclude = ['is_active']
+
+
+class LeadCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Lead

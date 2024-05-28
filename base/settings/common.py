@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     'import_export',
     'rest_framework',
     'employee',
-    'lms'
+    'lms',
+    'django_filters'
 ]
 
 MIDDLEWARE = [
@@ -119,3 +120,8 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 TOKEN_EXPIRY_IN_DAYS = 15
+
+
+REST_FRAMEWORK = {
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
+}
